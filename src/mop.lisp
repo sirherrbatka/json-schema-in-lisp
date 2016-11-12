@@ -98,7 +98,7 @@
     (error "Json does not contain object as root element"))
   (let* ((slots (closer-mop:class-direct-slots json-class))
          (slots-map (map-slots-with-initarg-key slots))
-         (slot-stack (list nil))
+         (current-slot nil)
          (init-map (make-hash-table :test 'eq))
          (initlist (iterate
                      (with skip = 0)
@@ -114,17 +114,22 @@
                                              (slot (and symbol (gethash symbol slots-map))))
                                         (if slot
                                             (progn
-                                              (push slot slot-stack)
+                                              (setf current-slot slot)
                                               (setf (gethash symbol init-map)
-                                                    (car slot-stack))
+                                                    current-slot)
                                               symbol)
                                             (progn (incf skip 1)
                                                    (next-iteration))))))
-                                  (setf (car slot-stack)
+                                  (setf current-slot
                                         (extract-value-from-json (field)
                                             (:object
-                                             (let ((type (closer-mop:slot-definition-type (car slot-stack))))
-                                               (make-json-instance-or-map field type))))))))))
+                                             (let ((type (closer-mop:slot-definition-type current-slot))
+                                                   (map-args (and (slot-boundp current-slot
+                                                                               '%map)
+                                                                  (read-map current-slot))))
+                                               (make-json-instance-or-map field
+                                                                          type
+                                                                          map-args))))))))))
     (values initlist
             (iterate
               (for (key slot) in-hashtable slots-map)

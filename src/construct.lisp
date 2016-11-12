@@ -32,24 +32,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Handle json arrays and unknown types, not part of the api.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun make-list-from-json-list (json)
-  (unless (eq (car json) :array)
-    (error "Json does not contains list as root element."))
-  (mapcar (lambda (x)
-            (extract-value-from-json (x)
-                ()))
-          (cdr json)))
-
-
-(defun make-json-instance-or-map (json type)
+(defun make-json-instance-or-map (json type map-args)
   (unless (eq :object (car json))
     (error "Json does not contain object as root element"))
   (if (or (eq type t)
           (eq type 'json-map))
-      (make-json-map (cdr json))
-      (make-json-instance type (cdr json))))
+      (apply #'make-json-map (cons json map-args))
+      (make-json-instance type json)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Handle data stored in the json lists.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun make-list-from-json-list (json)
+  (unless (eq (car json) :array)
+    (error "Json does not contains list as root element."))
+  (mapcar (lambda (x)
+            (extract-value-from-json (x) nil))
+          (cdr json)))

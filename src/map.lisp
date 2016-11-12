@@ -38,11 +38,13 @@
 
 
 (defun make-json-map (data &key (value t) (minimum nil) (maximum nil))
+  (unless (eq :object (car data))
+    (error "Json does not contain object as root element"))
   (let ((result (make-instance 'json-map
                                :value-type value)))
     (iterate
       (with stack = nil)
-      (for token-form in data)
+      (for token-form in (cdr data))
       (for (token form) = token-form)
       (if (eq :key token)
           (let ((key (cadr form)))
